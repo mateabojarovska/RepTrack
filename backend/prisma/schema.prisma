@@ -1,0 +1,137 @@
+// Database schema of RepTrack – see docs/03-podatkovni-model.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  Client
+  Trainer
+  Admin
+}
+
+enum MuscleGroup {
+  Chest
+  Back
+  Legs
+  Shoulders
+  Arms
+  Core
+}
+
+enum PlanStatus {
+  Draft
+  Active
+  Archived
+}
+
+enum WorkoutStatus {
+  Logged
+  Reviewed
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  // Filled in only for clients: the trainer they are assigned to
+  trainerId    Int?
+  trainer      User?    @relation("TrainerClients", fields: [trainerId], references: [id])
+  clients      User[]   @relation("TrainerClients")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  plansAsClient    TrainingPlan[] @relation("ClientPlans")
+  plansAsTrainer   TrainingPlan[] @relation("TrainerPlans")
+  workoutLogs      WorkoutLog[]
+  createdExercises Exercise[]
+}
+
+model Exercise {
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  muscleGroup   MuscleGroup
+  description   String?
+  isActive      Boolean        @default(true)
+  createdById   Int
+  createdBy     User           @relation(fields: [createdById], references: [id])
+  planExercises PlanExercise[]
+  loggedSets    LoggedSet[]
+}
+
+model TrainingPlan {
+  id          Int        @id @default(autoincrement())
+  clientId    Int
+  client      User       @relation("ClientPlans", fields: [clientId], references: [id])
+  trainerId   Int
+  trainer     User       @relation("TrainerPlans", fields: [trainerId], references: [id])
+  title       String
+  goal        String?
+  // A client has at most one Active plan – enforced in the backend (ADR 0002)
+  status      PlanStatus @default(Draft)
+  publishedAt DateTime?
+  archivedAt  DateTime?
+  createdAt   DateTime   @default(now())
+  days        PlanDay[]
+}
+
+model PlanDay {
+  id          Int            @id @default(autoincrement())
+  planId      Int
+  plan        TrainingPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  name        String
+  orderIndex  Int
+  exercises   PlanExercise[]
+  workoutLogs WorkoutLog[]
+}
+
+model PlanExercise {
+  id             Int      @id @default(autoincrement())
+  planDayId      Int
+  planDay        PlanDay  @relation(fields: [planDayId], references: [id], onDelete: Cascade)
+  exerciseId     Int
+  exercise       Exercise @relation(fields: [exerciseId], references: [id])
+  orderIndex     Int
+  targetSets     Int
+  targetReps     Int
+  // Empty for bodyweight exercises
+  targetWeightKg Decimal? @db.Decimal(6, 2)
+  note           String?
+}
+
+model WorkoutLog {
+  id              Int           @id @default(autoincrement())
+  clientId        Int
+  client          User          @relation(fields: [clientId], references: [id])
+  planDayId       Int
+  planDay         PlanDay       @relation(fields: [planDayId], references: [id])
+  performedOn     DateTime      @db.Date
+  status          WorkoutStatus @default(Logged)
+  clientNote      String?
+  trainerFeedback String?
+  reviewedAt      DateTime?
+  createdAt       DateTime      @default(now())
+  sets            LoggedSet[]
+}
+
+model LoggedSet {
+  id               Int        @id @default(autoincrement())
+  workoutLogId     Int
+  workoutLog       WorkoutLog @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  exerciseId       Int
+  exercise         Exercise   @relation(fields: [exerciseId], references: [id])
+  setNumber        Int
+  reps             Int
+  // 0 for bodyweight exercises
+  weightKg         Decimal    @db.Decimal(6, 2)
+  // Set by the backend when the workout is saved (US-07)
+  isPersonalRecord Boolean    @default(false)
+}
