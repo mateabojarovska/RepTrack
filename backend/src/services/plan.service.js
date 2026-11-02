@@ -2,7 +2,7 @@ import prisma from '../db.js';
 import { HttpError } from '../utils/httpError.js';
 
 // Days and exercises are always loaded in their order
-const PLAN_INCLUDE = {
+export const PLAN_INCLUDE = {
   client: { select: { id: true, firstName: true, lastName: true } },
   days: {
     orderBy: { orderIndex: 'asc' },
