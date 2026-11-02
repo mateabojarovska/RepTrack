@@ -1,11 +1,44 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomeView from '../views/HomeView.vue';
+import { useAuthStore } from '../stores/auth.js';
+import LoginView from '../views/LoginView.vue';
+import ClientHomeView from '../views/client/ClientHomeView.vue';
+import TrainerHomeView from '../views/trainer/TrainerHomeView.vue';
+import AdminHomeView from '../views/admin/AdminHomeView.vue';
+import PlanListView from '../views/trainer/PlanListView.vue';
+import PlanBuilderView from '../views/trainer/PlanBuilderView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', name: 'home', component: HomeView },
+    // The login page sends logged-in users on to their own start page
+    { path: '/', redirect: '/login' },
+    { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
+    { path: '/client', name: 'client-home', component: ClientHomeView, meta: { roles: ['Client'] } },
+    { path: '/trainer', name: 'trainer-home', component: TrainerHomeView, meta: { roles: ['Trainer'] } },
+    { path: '/trainer/plans', name: 'trainer-plans', component: PlanListView, meta: { roles: ['Trainer'] } },
+    { path: '/trainer/plans/new', name: 'trainer-plan-new', component: PlanBuilderView, meta: { roles: ['Trainer'] } },
+    { path: '/trainer/plans/:id', name: 'trainer-plan', component: PlanBuilderView, meta: { roles: ['Trainer'] } },
+    { path: '/admin', name: 'admin-home', component: AdminHomeView, meta: { roles: ['Admin'] } },
+    // Any other address leads to the user's own start page
+    { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
+});
+
+// Route guard: only logged-in users, and only the pages of their own role
+router.beforeEach(async (to) => {
+  const auth = useAuthStore();
+  await auth.loadUser();
+
+  if (to.meta.public) {
+    return auth.isLoggedIn ? auth.homePath : true;
+  }
+  if (!auth.isLoggedIn) {
+    return '/login';
+  }
+  if (!to.meta.roles || !to.meta.roles.includes(auth.user.role)) {
+    return auth.homePath;
+  }
+  return true;
 });
 
 export default router;

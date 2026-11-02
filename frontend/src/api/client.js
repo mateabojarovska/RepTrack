@@ -12,4 +12,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// If the token has expired, remove it and go back to the login page
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const isLoginRequest = error.config?.url === '/auth/login';
+    if (error.response?.status === 401 && !isLoginRequest && localStorage.getItem('token')) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  },
+);
+
+// The error message sent by the backend, or a general one
+export function errorMessage(error) {
+  return error.response?.data?.message || 'Something went wrong. Please try again.';
+}
+
 export default api;
