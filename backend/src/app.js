@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import exerciseRoutes from './routes/exercise.routes.js';
+import trainerRoutes from './routes/trainer.routes.js';
+import planRoutes from './routes/plan.routes.js';
 
 const app = express();
 
@@ -10,6 +13,9 @@ app.use(express.json());
 
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/exercises', exerciseRoutes);
+app.use('/api/trainer', trainerRoutes);
+app.use('/api/plans', planRoutes);
 
 // Unknown API address
 app.use((req, res) => {
