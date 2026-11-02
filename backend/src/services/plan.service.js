@@ -157,6 +157,27 @@ export async function updatePlan(trainerId, planId, input) {
   return formatPlan(plan);
 }
 
+// US-05: the draft becomes the client's active plan, and the previous active plan is archived
+// in the same transaction, so a client never has two active plans
+export async function publishPlan(trainerId, planId) {
+  const existing = await getOwnPlan(trainerId, planId);
+  if (existing.status !== 'Draft') throw new HttpError(409, 'Only a draft plan can be published');
+
+  const now = new Date();
+  const plan = await prisma.$transaction(async (tx) => {
+    await tx.trainingPlan.updateMany({
+      where: { clientId: existing.clientId, status: 'Active' },
+      data: { status: 'Archived', archivedAt: now },
+    });
+    return tx.trainingPlan.update({
+      where: { id: existing.id },
+      data: { status: 'Active', publishedAt: now },
+      include: PLAN_INCLUDE,
+    });
+  });
+  return formatPlan(plan);
+}
+
 export async function getPlan(trainerId, planId) {
   return formatPlan(await getOwnPlan(trainerId, planId));
 }
