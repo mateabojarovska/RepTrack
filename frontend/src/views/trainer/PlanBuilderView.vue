@@ -72,20 +72,48 @@ function fillForm(plan) {
   activeDay.value = 0;
 }
 
+// Saves the form as a draft and returns the plan id
+async function saveDraft() {
+  if (isNew.value) {
+    const { data } = await api.post('/plans', form.value);
+    fillForm(data);
+    await router.replace(`/trainer/plans/${data.id}`);
+    return data.id;
+  }
+  const { data } = await api.put(`/plans/${planId.value}`, form.value);
+  fillForm(data);
+  return data.id;
+}
+
 async function save() {
   error.value = '';
   message.value = '';
   saving.value = true;
   try {
-    if (isNew.value) {
-      const { data } = await api.post('/plans', form.value);
-      fillForm(data);
-      await router.replace(`/trainer/plans/${data.id}`);
-    } else {
-      const { data } = await api.put(`/plans/${planId.value}`, form.value);
-      fillForm(data);
-    }
+    await saveDraft();
     message.value = 'Draft saved.';
+  } catch (err) {
+    error.value = errorMessage(err);
+  } finally {
+    saving.value = false;
+  }
+}
+
+// US-05: save the latest changes, then publish the plan to the client
+async function publish() {
+  error.value = '';
+  message.value = '';
+  const ok = window.confirm(
+    "Publish this plan? It becomes the client's active plan and the client's current active plan is archived.",
+  );
+  if (!ok) return;
+
+  saving.value = true;
+  try {
+    const id = await saveDraft();
+    const { data } = await api.post(`/plans/${id}/publish`);
+    fillForm(data);
+    message.value = 'Plan published. It is now the client\'s active plan.';
   } catch (err) {
     error.value = errorMessage(err);
   } finally {
@@ -213,7 +241,11 @@ onMounted(async () => {
 
     <div v-if="editable" class="actions">
       <button class="btn" type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Save draft' }}</button>
+      <button class="btn primary" type="button" :disabled="saving" @click="publish">Publish plan</button>
     </div>
+    <p v-if="editable" class="hint">
+      Publishing makes this the client's active plan and archives the current active plan.
+    </p>
   </form>
 </template>
 
@@ -279,6 +311,11 @@ fieldset {
   justify-content: flex-end;
   gap: 12px;
   margin-top: 16px;
+}
+.hint {
+  text-align: right;
+  font-size: 13px;
+  color: #555;
 }
 .notice {
   background: #f1f1f1;

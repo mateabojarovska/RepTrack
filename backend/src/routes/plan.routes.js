@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth.js';
-import { createPlan, updatePlan, getPlan, listPlans } from '../services/plan.service.js';
+import { createPlan, updatePlan, publishPlan, getPlan, listPlans } from '../services/plan.service.js';
 
 const router = Router();
 
@@ -26,6 +26,11 @@ router.post('/', async (req, res) => {
 // PUT /api/plans/:id – replace the content of a draft plan (same body without clientId)
 router.put('/:id', async (req, res) => {
   res.json(await updatePlan(req.user.id, req.params.id, req.body || {}));
+});
+
+// POST /api/plans/:id/publish – make the draft the client's active plan and archive the previous one
+router.post('/:id/publish', async (req, res) => {
+  res.json(await publishPlan(req.user.id, req.params.id));
 });
 
 export default router;
