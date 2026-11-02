@@ -10,7 +10,10 @@ const ROLE_NAMES = { Client: 'Client', Trainer: 'Trainer', Admin: 'Administrator
 
 // Menu links of each role; later issues add more
 const MENU = {
-  Client: [],
+  Client: [
+    { to: '/client', label: 'My plan' },
+    { to: '/client/log', label: 'Log workout' },
+  ],
   Trainer: [{ to: '/trainer/plans', label: 'Plans' }],
   Admin: [],
 };
