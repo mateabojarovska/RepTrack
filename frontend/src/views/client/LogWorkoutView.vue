@@ -15,6 +15,9 @@ const saving = ref(false);
 
 const day = computed(() => plan.value?.days.find((d) => d.id === dayId.value));
 
+// Sets of the saved workout that the backend marked as personal records (US-07)
+const records = computed(() => (saved.value ? saved.value.sets.filter((s) => s.isPersonalRecord) : []));
+
 function targetText(pe) {
   const weight = pe.targetWeightKg === null ? 'bodyweight' : `${pe.targetWeightKg} kg`;
   return `${pe.targetSets} × ${pe.targetReps} @ ${weight}`;
@@ -87,9 +90,34 @@ onMounted(async () => {
 
     <p v-if="noPlan">You do not have an active plan yet</p>
 
-    <p v-if="saved" class="success">
-      Workout saved: {{ saved.planDay.name }}, {{ saved.performedOn }}, {{ saved.sets.length }} sets.
-    </p>
+    <div v-if="saved" class="card saved">
+      <p class="success">
+        Workout saved: {{ saved.planDay.name }}, {{ saved.performedOn }}, {{ saved.sets.length }} sets.
+      </p>
+      <p v-if="records.length" class="records">
+        New personal record{{ records.length > 1 ? 's' : '' }}:
+        {{ records.map((s) => `${s.exercise.name} ${s.weightKg} kg`).join(', ') }}
+      </p>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Exercise</th>
+            <th>Set</th>
+            <th>Done</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="s in saved.sets" :key="s.id">
+            <td>{{ s.exercise.name }}</td>
+            <td>{{ s.setNumber }}</td>
+            <td>
+              {{ s.reps }} × {{ s.weightKg }} kg
+              <span v-if="s.isPersonalRecord" class="badge pr">★ Personal record</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <form v-if="plan" @submit.prevent="save">
       <div class="row">
@@ -191,6 +219,13 @@ textarea {
   padding: 8px 0 0;
   cursor: pointer;
   font: inherit;
+}
+.saved {
+  margin-bottom: 16px;
+}
+.records {
+  font-weight: bold;
+  margin: 8px 0;
 }
 .full {
   width: 100%;
