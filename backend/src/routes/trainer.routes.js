@@ -1,19 +1,14 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth.js';
-import prisma from '../db.js';
+import { listClientsWithAdherence } from '../services/adherence.service.js';
 
 const router = Router();
 
 router.use(requireAuth, requireRole('Trainer'));
 
-// GET /api/trainer/clients – the clients assigned to the logged-in trainer
+// GET /api/trainer/clients – the trainer's clients with this week's plan adherence and last workout date
 router.get('/clients', async (req, res) => {
-  const clients = await prisma.user.findMany({
-    where: { trainerId: req.user.id, role: 'Client', isActive: true },
-    orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
-    select: { id: true, firstName: true, lastName: true, email: true },
-  });
-  res.json(clients);
+  res.json(await listClientsWithAdherence(req.user.id));
 });
 
 export default router;
