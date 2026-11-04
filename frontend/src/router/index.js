@@ -6,6 +6,7 @@ import TrainerHomeView from '../views/trainer/TrainerHomeView.vue';
 import AdminHomeView from '../views/admin/AdminHomeView.vue';
 import PlanListView from '../views/trainer/PlanListView.vue';
 import ClientsView from '../views/trainer/ClientsView.vue';
+import ReviewView from '../views/trainer/ReviewView.vue';
 import PlanBuilderView from '../views/trainer/PlanBuilderView.vue';
 import ClientPlanView from '../views/client/ClientPlanView.vue';
 import LogWorkoutView from '../views/client/LogWorkoutView.vue';
@@ -21,6 +22,8 @@ const router = createRouter({
     { path: '/client/plans/:id', name: 'client-plan', component: ClientPlanView, meta: { roles: ['Client'] } },
     { path: '/trainer', name: 'trainer-home', component: TrainerHomeView, meta: { roles: ['Trainer'] } },
     { path: '/trainer/clients', name: 'trainer-clients', component: ClientsView, meta: { roles: ['Trainer'] } },
+    { path: '/trainer/reviews', name: 'trainer-reviews', component: ReviewView, meta: { roles: ['Trainer'] } },
+    { path: '/trainer/reviews/:id', name: 'trainer-review', component: ReviewView, meta: { roles: ['Trainer'] } },
     { path: '/trainer/plans', name: 'trainer-plans', component: PlanListView, meta: { roles: ['Trainer'] } },
     { path: '/trainer/plans/new', name: 'trainer-plan-new', component: PlanBuilderView, meta: { roles: ['Trainer'] } },
     { path: '/trainer/plans/:id', name: 'trainer-plan', component: PlanBuilderView, meta: { roles: ['Trainer'] } },

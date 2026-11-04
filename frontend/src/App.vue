@@ -17,6 +17,7 @@ const MENU = {
   Trainer: [
     { to: '/trainer/clients', label: 'Clients' },
     { to: '/trainer/plans', label: 'Plans' },
+    { to: '/trainer/reviews', label: 'Workouts to review' },
   ],
   Admin: [],
 };
