@@ -7,6 +7,7 @@ import trainerRoutes from './routes/trainer.routes.js';
 import planRoutes from './routes/plan.routes.js';
 import meRoutes from './routes/me.routes.js';
 import workoutRoutes from './routes/workout.routes.js';
+import reviewRoutes from './routes/review.routes.js';
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use('/api/trainer', trainerRoutes);
 app.use('/api/plans', planRoutes);
 app.use('/api/me', meRoutes);
 app.use('/api/workouts', workoutRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Unknown API address
 app.use((req, res) => {
