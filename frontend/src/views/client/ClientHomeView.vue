@@ -3,9 +3,11 @@ import { ref, computed, onMounted } from 'vue';
 import api, { errorMessage } from '../../api/client.js';
 import { useAuthStore } from '../../stores/auth.js';
 import PlanDetails from '../../components/PlanDetails.vue';
+import AdherenceBar from '../../components/AdherenceBar.vue';
 
 const auth = useAuthStore();
 const activePlan = ref(null);
+const adherence = ref(null);
 const plans = ref([]);
 const error = ref('');
 const loaded = ref(false);
@@ -22,6 +24,7 @@ onMounted(async () => {
     plans.value = data;
     if (data.some((p) => p.status === 'Active')) {
       activePlan.value = (await api.get('/me/active-plan')).data;
+      adherence.value = (await api.get('/me/adherence')).data;
     }
   } catch (err) {
     error.value = errorMessage(err);
@@ -42,6 +45,7 @@ onMounted(async () => {
         <RouterLink class="btn primary" to="/client/log">Log workout</RouterLink>
       </div>
       <p v-if="activePlan.goal">Goal: {{ activePlan.goal }}</p>
+      <p v-if="adherence">This week: <AdherenceBar :adherence="adherence" /></p>
       <PlanDetails :plan="activePlan" />
     </section>
     <p v-else>You do not have an active plan yet. Your trainer will publish one for you.</p>
