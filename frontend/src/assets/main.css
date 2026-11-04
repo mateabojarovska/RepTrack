@@ -139,3 +139,9 @@ a.btn.primary {
 .table input.num {
   width: 80px;
 }
+
+/* Personal record label (US-07) */
+.badge.pr {
+  border-style: dashed;
+  margin-left: 6px;
+}

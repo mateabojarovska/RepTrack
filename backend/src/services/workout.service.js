@@ -97,6 +97,33 @@ async function validateWorkoutInput(clientId, input) {
   return { planDay, performedOn, clientNote, sets: cleanSets };
 }
 
+// ---------- Personal records (US-07) ----------
+
+// Marks each set whose weight is higher than every earlier set of the same exercise by this client.
+// "Earlier" means sets in workouts logged before this one, and the sets before it in this workout.
+// The first time a client does an exercise there is nothing to beat yet, so it is the starting point, not a record.
+// beforeWorkoutId: when a workout is corrected, only workouts logged before it count as earlier.
+export async function markPersonalRecords(clientId, sets, beforeWorkoutId = null) {
+  const best = {};
+  for (const exerciseId of new Set(sets.map((s) => s.exerciseId))) {
+    const result = await prisma.loggedSet.aggregate({
+      _max: { weightKg: true },
+      where: {
+        exerciseId,
+        workoutLog: { clientId, ...(beforeWorkoutId ? { id: { lt: beforeWorkoutId } } : {}) },
+      },
+    });
+    best[exerciseId] = result._max.weightKg === null ? null : Number(result._max.weightKg);
+  }
+
+  return sets.map((set) => {
+    const previousBest = best[set.exerciseId];
+    const isPersonalRecord = previousBest !== null && set.weightKg > previousBest;
+    if (previousBest === null || set.weightKg > previousBest) best[set.exerciseId] = set.weightKg;
+    return { ...set, isPersonalRecord };
+  });
+}
+
 async function getOwnWorkout(clientId, workoutId) {
   const workout = await prisma.workoutLog.findUnique({ where: { id: Number(workoutId) || 0 }, include: WORKOUT_INCLUDE });
   if (!workout || workout.clientId !== clientId) throw new HttpError(404, 'Workout not found');
@@ -105,6 +132,7 @@ async function getOwnWorkout(clientId, workoutId) {
 
 export async function logWorkout(clientId, input) {
   const data = await validateWorkoutInput(clientId, input);
+  const sets = await markPersonalRecords(clientId, data.sets);
   const workout = await prisma.workoutLog.create({
     data: {
       clientId,
@@ -112,7 +140,7 @@ export async function logWorkout(clientId, input) {
       performedOn: data.performedOn,
       clientNote: data.clientNote,
       status: 'Logged',
-      sets: { create: data.sets },
+      sets: { create: sets },
     },
     include: WORKOUT_INCLUDE,
   });
@@ -124,6 +152,8 @@ export async function updateWorkout(clientId, workoutId, input) {
   const existing = await getOwnWorkout(clientId, workoutId);
   if (existing.status !== 'Logged') throw new HttpError(409, 'A reviewed workout can no longer be edited');
   const data = await validateWorkoutInput(clientId, { planDayId: existing.planDayId, ...input });
+  // Records are checked again against the workouts logged before this one
+  const sets = await markPersonalRecords(clientId, data.sets, existing.id);
 
   const workout = await prisma.$transaction(async (tx) => {
     await tx.loggedSet.deleteMany({ where: { workoutLogId: existing.id } });
@@ -133,7 +163,7 @@ export async function updateWorkout(clientId, workoutId, input) {
         planDayId: data.planDay.id,
         performedOn: data.performedOn,
         clientNote: data.clientNote,
-        sets: { create: data.sets },
+        sets: { create: sets },
       },
       include: WORKOUT_INCLUDE,
     });
