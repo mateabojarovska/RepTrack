@@ -10,6 +10,7 @@ import ReviewView from '../views/trainer/ReviewView.vue';
 import PlanBuilderView from '../views/trainer/PlanBuilderView.vue';
 import ClientPlanView from '../views/client/ClientPlanView.vue';
 import LogWorkoutView from '../views/client/LogWorkoutView.vue';
+import HistoryView from '../views/client/HistoryView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -19,6 +20,7 @@ const router = createRouter({
     { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
     { path: '/client', name: 'client-home', component: ClientHomeView, meta: { roles: ['Client'] } },
     { path: '/client/log', name: 'client-log', component: LogWorkoutView, meta: { roles: ['Client'] } },
+    { path: '/client/history', name: 'client-history', component: HistoryView, meta: { roles: ['Client'] } },
     { path: '/client/plans/:id', name: 'client-plan', component: ClientPlanView, meta: { roles: ['Client'] } },
     { path: '/trainer', name: 'trainer-home', component: TrainerHomeView, meta: { roles: ['Trainer'] } },
     { path: '/trainer/clients', name: 'trainer-clients', component: ClientsView, meta: { roles: ['Trainer'] } },

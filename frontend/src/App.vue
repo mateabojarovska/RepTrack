@@ -13,6 +13,7 @@ const MENU = {
   Client: [
     { to: '/client', label: 'My plan' },
     { to: '/client/log', label: 'Log workout' },
+    { to: '/client/history', label: 'History' },
   ],
   Trainer: [
     { to: '/trainer/clients', label: 'Clients' },
